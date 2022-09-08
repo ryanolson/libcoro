@@ -4,6 +4,14 @@
 
 namespace coro
 {
+
+thread_local thread_pool* thread_pool::m_thread_local_ptr{nullptr};
+
+auto thread_pool::on_this_thread() -> thread_pool*
+{
+    return m_thread_local_ptr;
+}
+
 thread_pool::operation::operation(thread_pool& tp) noexcept : m_thread_pool(tp)
 {
 }
@@ -82,6 +90,8 @@ auto thread_pool::executor(std::stop_token stop_token, std::size_t idx) -> void
         m_opts.on_thread_start_functor(idx);
     }
 
+    m_thread_local_ptr = this;
+
     while (!stop_token.stop_requested())
     {
         // Wait until the queue has operations to execute or shutdown has been requested.
@@ -104,6 +114,8 @@ auto thread_pool::executor(std::stop_token stop_token, std::size_t idx) -> void
             m_size.fetch_sub(1, std::memory_order::release);
         }
     }
+
+    m_thread_local_ptr = nullptr;
 
     if (m_opts.on_thread_stop_functor != nullptr)
     {

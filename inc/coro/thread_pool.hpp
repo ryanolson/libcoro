@@ -88,10 +88,10 @@ public:
             .on_thread_start_functor = nullptr,
             .on_thread_stop_functor  = nullptr});
 
-    thread_pool(const thread_pool&) = delete;
-    thread_pool(thread_pool&&)      = delete;
+    thread_pool(const thread_pool&)                    = delete;
+    thread_pool(thread_pool&&)                         = delete;
     auto operator=(const thread_pool&) -> thread_pool& = delete;
-    auto operator=(thread_pool&&) -> thread_pool& = delete;
+    auto operator=(thread_pool&&) -> thread_pool&      = delete;
 
     virtual ~thread_pool();
 
@@ -211,6 +211,12 @@ public:
      */
     auto queue_empty() const noexcept -> bool { return queue_size() == 0; }
 
+    /**
+     * If the calling thread is owned by a thread_pool, return a pointer to the thread_pool; otherwise, return a
+     * nullptr;
+     */
+    static auto on_this_thread() -> thread_pool*;
+
 private:
     /// The configuration options.
     options m_opts;
@@ -239,6 +245,8 @@ private:
     std::atomic<std::size_t> m_size{0};
     /// Has the thread pool been requested to shut down?
     std::atomic<bool> m_shutdown_requested{false};
+
+    static thread_local thread_pool* m_thread_local_ptr;
 };
 
 } // namespace coro
